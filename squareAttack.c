@@ -1,5 +1,6 @@
 //AES 4 rounds Square attack
 //Ryan Denzel, Matt Binsfeld
+//https://www.ime.usp.br/~rt/cranalysis/AESSimplified.pdf
 
 #include "rijndael-alg-fst.h"
 #include <stdlib.h>
@@ -18,6 +19,13 @@
 #define GETU32(pt) (((u32)(pt)[0] << 24) ^ ((u32)(pt)[1] << 16) ^ ((u32)(pt)[2] <<  8) ^ ((u32)(pt)[3]))
 #define PUTU32(ct, st) { (ct)[0] = (u8)((st) >> 24); (ct)[1] = (u8)((st) >> 16); (ct)[2] = (u8)((st) >>  8); (ct)[3] = (u8)(st); }
 #endif
+
+//0102030405060708090a0b0c0d0e0f00
+//71fae486fafc990d4a44a21a7fac6b75
+//For checking key possibilities
+static unsigned char pt[16] = {01,02,03,04,05,06,07,08,09,10,11,12,13,14,15,0};
+static unsigned char ct[16] = {};
+
 
 static const u32 Te4[256] = {
     0x63636363U, 0x7c7c7c7cU, 0x77777777U, 0x7b7b7b7bU,
