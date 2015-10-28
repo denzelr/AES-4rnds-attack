@@ -19,6 +19,79 @@
 #define PUTU32(ct, st) { (ct)[0] = (u8)((st) >> 24); (ct)[1] = (u8)((st) >> 16); (ct)[2] = (u8)((st) >>  8); (ct)[3] = (u8)(st); }
 #endif
 
+static const u32 Te4[256] = {
+    0x63636363U, 0x7c7c7c7cU, 0x77777777U, 0x7b7b7b7bU,
+    0xf2f2f2f2U, 0x6b6b6b6bU, 0x6f6f6f6fU, 0xc5c5c5c5U,
+    0x30303030U, 0x01010101U, 0x67676767U, 0x2b2b2b2bU,
+    0xfefefefeU, 0xd7d7d7d7U, 0xababababU, 0x76767676U,
+    0xcacacacaU, 0x82828282U, 0xc9c9c9c9U, 0x7d7d7d7dU,
+    0xfafafafaU, 0x59595959U, 0x47474747U, 0xf0f0f0f0U,
+    0xadadadadU, 0xd4d4d4d4U, 0xa2a2a2a2U, 0xafafafafU,
+    0x9c9c9c9cU, 0xa4a4a4a4U, 0x72727272U, 0xc0c0c0c0U,
+    0xb7b7b7b7U, 0xfdfdfdfdU, 0x93939393U, 0x26262626U,
+    0x36363636U, 0x3f3f3f3fU, 0xf7f7f7f7U, 0xccccccccU,
+    0x34343434U, 0xa5a5a5a5U, 0xe5e5e5e5U, 0xf1f1f1f1U,
+    0x71717171U, 0xd8d8d8d8U, 0x31313131U, 0x15151515U,
+    0x04040404U, 0xc7c7c7c7U, 0x23232323U, 0xc3c3c3c3U,
+    0x18181818U, 0x96969696U, 0x05050505U, 0x9a9a9a9aU,
+    0x07070707U, 0x12121212U, 0x80808080U, 0xe2e2e2e2U,
+    0xebebebebU, 0x27272727U, 0xb2b2b2b2U, 0x75757575U,
+    0x09090909U, 0x83838383U, 0x2c2c2c2cU, 0x1a1a1a1aU,
+    0x1b1b1b1bU, 0x6e6e6e6eU, 0x5a5a5a5aU, 0xa0a0a0a0U,
+    0x52525252U, 0x3b3b3b3bU, 0xd6d6d6d6U, 0xb3b3b3b3U,
+    0x29292929U, 0xe3e3e3e3U, 0x2f2f2f2fU, 0x84848484U,
+    0x53535353U, 0xd1d1d1d1U, 0x00000000U, 0xededededU,
+    0x20202020U, 0xfcfcfcfcU, 0xb1b1b1b1U, 0x5b5b5b5bU,
+    0x6a6a6a6aU, 0xcbcbcbcbU, 0xbebebebeU, 0x39393939U,
+    0x4a4a4a4aU, 0x4c4c4c4cU, 0x58585858U, 0xcfcfcfcfU,
+    0xd0d0d0d0U, 0xefefefefU, 0xaaaaaaaaU, 0xfbfbfbfbU,
+    0x43434343U, 0x4d4d4d4dU, 0x33333333U, 0x85858585U,
+    0x45454545U, 0xf9f9f9f9U, 0x02020202U, 0x7f7f7f7fU,
+    0x50505050U, 0x3c3c3c3cU, 0x9f9f9f9fU, 0xa8a8a8a8U,
+    0x51515151U, 0xa3a3a3a3U, 0x40404040U, 0x8f8f8f8fU,
+    0x92929292U, 0x9d9d9d9dU, 0x38383838U, 0xf5f5f5f5U,
+    0xbcbcbcbcU, 0xb6b6b6b6U, 0xdadadadaU, 0x21212121U,
+    0x10101010U, 0xffffffffU, 0xf3f3f3f3U, 0xd2d2d2d2U,
+    0xcdcdcdcdU, 0x0c0c0c0cU, 0x13131313U, 0xececececU,
+    0x5f5f5f5fU, 0x97979797U, 0x44444444U, 0x17171717U,
+    0xc4c4c4c4U, 0xa7a7a7a7U, 0x7e7e7e7eU, 0x3d3d3d3dU,
+    0x64646464U, 0x5d5d5d5dU, 0x19191919U, 0x73737373U,
+    0x60606060U, 0x81818181U, 0x4f4f4f4fU, 0xdcdcdcdcU,
+    0x22222222U, 0x2a2a2a2aU, 0x90909090U, 0x88888888U,
+    0x46464646U, 0xeeeeeeeeU, 0xb8b8b8b8U, 0x14141414U,
+    0xdedededeU, 0x5e5e5e5eU, 0x0b0b0b0bU, 0xdbdbdbdbU,
+    0xe0e0e0e0U, 0x32323232U, 0x3a3a3a3aU, 0x0a0a0a0aU,
+    0x49494949U, 0x06060606U, 0x24242424U, 0x5c5c5c5cU,
+    0xc2c2c2c2U, 0xd3d3d3d3U, 0xacacacacU, 0x62626262U,
+    0x91919191U, 0x95959595U, 0xe4e4e4e4U, 0x79797979U,
+    0xe7e7e7e7U, 0xc8c8c8c8U, 0x37373737U, 0x6d6d6d6dU,
+    0x8d8d8d8dU, 0xd5d5d5d5U, 0x4e4e4e4eU, 0xa9a9a9a9U,
+    0x6c6c6c6cU, 0x56565656U, 0xf4f4f4f4U, 0xeaeaeaeaU,
+    0x65656565U, 0x7a7a7a7aU, 0xaeaeaeaeU, 0x08080808U,
+    0xbabababaU, 0x78787878U, 0x25252525U, 0x2e2e2e2eU,
+    0x1c1c1c1cU, 0xa6a6a6a6U, 0xb4b4b4b4U, 0xc6c6c6c6U,
+    0xe8e8e8e8U, 0xddddddddU, 0x74747474U, 0x1f1f1f1fU,
+    0x4b4b4b4bU, 0xbdbdbdbdU, 0x8b8b8b8bU, 0x8a8a8a8aU,
+    0x70707070U, 0x3e3e3e3eU, 0xb5b5b5b5U, 0x66666666U,
+    0x48484848U, 0x03030303U, 0xf6f6f6f6U, 0x0e0e0e0eU,
+    0x61616161U, 0x35353535U, 0x57575757U, 0xb9b9b9b9U,
+    0x86868686U, 0xc1c1c1c1U, 0x1d1d1d1dU, 0x9e9e9e9eU,
+    0xe1e1e1e1U, 0xf8f8f8f8U, 0x98989898U, 0x11111111U,
+    0x69696969U, 0xd9d9d9d9U, 0x8e8e8e8eU, 0x94949494U,
+    0x9b9b9b9bU, 0x1e1e1e1eU, 0x87878787U, 0xe9e9e9e9U,
+    0xcecececeU, 0x55555555U, 0x28282828U, 0xdfdfdfdfU,
+    0x8c8c8c8cU, 0xa1a1a1a1U, 0x89898989U, 0x0d0d0d0dU,
+    0xbfbfbfbfU, 0xe6e6e6e6U, 0x42424242U, 0x68686868U,
+    0x41414141U, 0x99999999U, 0x2d2d2d2dU, 0x0f0f0f0fU,
+    0xb0b0b0b0U, 0x54545454U, 0xbbbbbbbbU, 0x16161616U,
+};
+
+static const u32 rcon[] = {
+	0x01000000, 0x02000000, 0x04000000, 0x08000000,
+	0x10000000, 0x20000000, 0x40000000, 0x80000000,
+	0x1B000000, 0x36000000, /* for 128-bit blocks, Rijndael never uses more than 10 rcon values */
+};
+
 const unsigned char SBOX_i[] = {	
 					0x52, 0x09, 0x6A, 0xD5, 0x30, 0x36, 0xA5, 0x38, 0xBF, 0x40, 0xA3, 0x9E, 0x81, 0xF3, 0xD7, 0xFB,
 					0x7C, 0xE3, 0x39, 0x82, 0x9B, 0x2F, 0xFF, 0x87, 0x34, 0x8E, 0x43, 0x44, 0xC4, 0xDE, 0xE9, 0xCB,
@@ -111,25 +184,25 @@ void combine_keys(){
 	for(id = 0; key_poss[13][id] != 0; id++){
 	for(ie = 0; key_poss[14][ie] != 0; ie++){
 	for(iff = 0; key_poss[15][iff] != 0; iff++){
-		//printf("%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\n", key_poss[0][i0], key_poss[1][i1], key_poss[2][i2], key_poss[3][i3], key_poss[4][i4], key_poss[5][i5], key_poss[6][i6], key_poss[7][i7], key_poss[8][i8], key_poss[9][i9], key_poss[10][ia], key_poss[11][ib], key_poss[12][ic], key_poss[13][id], key_poss[14][ie], key_poss[15][iff]);
-		rnd_keys[p][i0] = key_poss[0][i0];
-		rnd_keys[p][i1] = key_poss[1][i1];
-		rnd_keys[p][i2] = key_poss[2][i2];
-		rnd_keys[p][i3] = key_poss[3][i3];
-		rnd_keys[p][i4] = key_poss[4][i4];
-		rnd_keys[p][i5] = key_poss[5][i5];
-		rnd_keys[p][i6] = key_poss[6][i6];
-		rnd_keys[p][i7] = key_poss[7][i7];
-		rnd_keys[p][i8] = key_poss[8][i8];
-		rnd_keys[p][i9] = key_poss[9][i9];
-		rnd_keys[p][ia] = key_poss[10][ia];
-		rnd_keys[p][ib] = key_poss[11][ib];
-		rnd_keys[p][ic] = key_poss[12][ic];
-		rnd_keys[p][id] = key_poss[13][id];
-		rnd_keys[p][ie] = key_poss[14][ie];
-		rnd_keys[p][iff] = key_poss[15][iff];
+		//printf("keyposs = %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\n", key_poss[0][i0], key_poss[1][i1], key_poss[2][i2], key_poss[3][i3], key_poss[4][i4], key_poss[5][i5], key_poss[6][i6], key_poss[7][i7], key_poss[8][i8], key_poss[9][i9], key_poss[10][ia], key_poss[11][ib], key_poss[12][ic], key_poss[13][id], key_poss[14][ie], key_poss[15][iff]);
+		rnd_keys[p][0] = key_poss[0][i0];
+		rnd_keys[p][1] = key_poss[1][i1];
+		rnd_keys[p][2] = key_poss[2][i2];
+		rnd_keys[p][3] = key_poss[3][i3];
+		rnd_keys[p][4] = key_poss[4][i4];
+		rnd_keys[p][5] = key_poss[5][i5];
+		rnd_keys[p][6] = key_poss[6][i6];
+		rnd_keys[p][7] = key_poss[7][i7];
+		rnd_keys[p][8] = key_poss[8][i8];
+		rnd_keys[p][9] = key_poss[9][i9];
+		rnd_keys[p][10] = key_poss[10][ia];
+		rnd_keys[p][11] = key_poss[11][ib];
+		rnd_keys[p][12] = key_poss[12][ic];
+		rnd_keys[p][13] = key_poss[13][id];
+		rnd_keys[p][14] = key_poss[14][ie];
+		rnd_keys[p][15] = key_poss[15][iff];
 		p++;
-		
+		//printf("rnd_keys: %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\n", rnd_keys[0][i0], rnd_keys[1][i1], rnd_keys[2][i2], rnd_keys[3][i3], rnd_keys[4][i4], rnd_keys[5][i5], rnd_keys[6][i6], rnd_keys[7][i7], rnd_keys[8][i8], rnd_keys[9][i9], rnd_keys[10][ia], rnd_keys[11][ib], rnd_keys[12][ic], rnd_keys[13][id], rnd_keys[14][ie], rnd_keys[15][iff]);
 	}}}}}}}}}}}}}}}}
 }
 
@@ -151,11 +224,11 @@ void print_hex_string(char* buf, int len)
         printf("%02x", *((unsigned char *)buf + i));
 }
 
-void reverse_key_sched(u32 rk[/*4*(Nr + 1)*/], const u8 cipherKey[], int keyBits){
-	/*
+void reverse_key_sched(){
+	
 	int i = 0;
 	u32 temp;
-
+	/*
 	rk[0] = GETU32(cipherKey     );
 	rk[1] = GETU32(cipherKey +  4);
 	rk[2] = GETU32(cipherKey +  8);
@@ -178,14 +251,16 @@ void reverse_key_sched(u32 rk[/*4*(Nr + 1)*/], const u8 cipherKey[], int keyBits
 			rk += 4;
 		}
 	}*/
-	u32 rk[16];
-	for(int i = 0; rnd_keys[i] != 0; i++){
-		unsigned char cipherkey[] = {key_poss[i][0], key_poss[i][1], key_poss[i][2], key_poss[i][3], key_poss[i][4], 
-			key_poss[i][5], key_poss[i][6], key_poss[i][7], key_poss[i][8], key_poss[i][9], key_poss[i][10], 
-			key_poss[i][11], key_poss[i][12], key_poss[i][13], key_poss[i][14], key_poss[i][15]};
-			rijndaelKeySetupDec(rk, (unsigned char *)cipherkey, 128);
-			//reverse_key_sched();
-			print_hex_string(rk, 128);
+	unsigned char ciphertexts[16];
+	//hard coded rnd_keys length for this attack at 1536
+	for(int i = 0; i < 1536; i++){
+		unsigned char rk[] = {rnd_keys[i][0], rnd_keys[i][1], rnd_keys[i][2], rnd_keys[i][3], rnd_keys[i][4], 
+			rnd_keys[i][5], rnd_keys[i][6], rnd_keys[i][7], rnd_keys[i][8], rnd_keys[i][9], rnd_keys[i][10], 
+			rnd_keys[i][11], rnd_keys[i][12], rnd_keys[i][13], rnd_keys[i][14], rnd_keys[i][15]};
+			for(int j = 0; j < 16; j++){
+				printf("%d ", rk[j]);
+			}
+			printf("\n");
 	}
 
 	
@@ -197,9 +272,7 @@ int main(int argc, char const *argv[])
 
 	break_aes();
 	combine_keys();
+	reverse_key_sched();
 	
-	
-	
-
 	return 0;
 }
