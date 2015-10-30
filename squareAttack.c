@@ -1,6 +1,7 @@
 //AES 4 rounds Square attack
 //Ryan Denzel, Matt Binsfeld
 //https://www.ime.usp.br/~rt/cranalysis/AESSimplified.pdf
+//https://www.ime.usp.br/~rt/cranalysis/lucksRijndael.pdf
 
 #include "rijndael-alg-fst.h"
 #include <stdlib.h>
