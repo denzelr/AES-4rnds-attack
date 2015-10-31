@@ -25,6 +25,7 @@
 //71fae486fafc990d4a44a21a7fac6b75
 //For checking key possibilities
 static unsigned char pt[16] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0};
+static unsigned char sln[16] = {0x71,0xfa,0xe4,0x86,0xfa,0xfc,0x99,0x0d,0x4a,0x44,0xa2,0x1a,0x7f,0xac,0x6b, 0x75};
 unsigned char ct[16];
 unsigned k[1024];
 int p;
@@ -221,6 +222,9 @@ void cycle_through_round_keys(){
 			rijndaelEncrypt(k, 4, pt, ct);
 			print_hex_string((char *)ct, 16);
 			printf("\n");
+			if(!strcmp((char*)ct, (char*)sln)){
+				printf("found key\n");
+			}
 	}
 
 	
