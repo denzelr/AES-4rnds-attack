@@ -220,7 +220,7 @@ void cycle_through_round_keys(){
 			rnd_keys[i][11], rnd_keys[i][12], rnd_keys[i][13], rnd_keys[i][14], rnd_keys[i][15]};
 			reverse_schedule(rk);
 			rijndaelEncrypt(k, 4, pt, ct);
-			print_hex_string((char *)ct, 16);
+			//print_hex_string((char *)ct, 16);
 			printf("\n");
 			if(!strcmp((char*)ct, (char*)sln)){
 				printf("found key\n");
