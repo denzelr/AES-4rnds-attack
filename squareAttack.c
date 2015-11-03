@@ -129,7 +129,7 @@ void break_aes(){
 
 void combine_keys(){
 
-	//Combine all key possibilites from rnd_keys
+	//Combine all key possibilites from key_poss
 	int i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, ia, ib, ic, id, ie, iff;
 	for(i0 = 0; key_poss[0][i0] != 0; i0++){
 	for(i1 = 0; key_poss[1][i1] != 0; i1++){
@@ -222,7 +222,7 @@ u32 get_words(unsigned char r1, unsigned char r2, unsigned char r3, unsigned cha
 }
 
 void cycle_through_round_keys(int i){
-		unsigned char rk[4] = {
+		unsigned char rk[20] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		get_words(rnd_keys[i][0], rnd_keys[i][1], rnd_keys[i][2], rnd_keys[i][3]), 
 		get_words(rnd_keys[i][4], rnd_keys[i][5], rnd_keys[i][6], rnd_keys[i][7]), 
 		get_words(rnd_keys[i][8], rnd_keys[i][9], rnd_keys[i][10], rnd_keys[i][11]), 
