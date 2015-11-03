@@ -10,6 +10,7 @@
 #include <limits.h>
 #include <assert.h>
 
+#define AES_ROUNDS 4
 
 #define SWAP(x) (_lrotl(x, 8) & 0x00ff00ff | _lrotr(x, 8) & 0xff00ff00)
 
@@ -21,21 +22,21 @@
 #define PUTU32(ct, st) { (ct)[0] = (u8)((st) >> 24); (ct)[1] = (u8)((st) >> 16); (ct)[2] = (u8)((st) >>  8); (ct)[3] = (u8)(st); }
 #endif
 
-//0102030405060708090a0b0c0d0e0f00
-//71fae486fafc990d4a44a21a7fac6b75
-//For checking key possibilities
-static unsigned char pt[16] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0};
+uint32_t get_words(unsigned char r1, unsigned char r2, unsigned char r3, unsigned char r4);
+
+static unsigned char pt[16] = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x00};
 static unsigned char sln[16] = {0x71,0xfa,0xe4,0x86,0xfa,0xfc,0x99,0x0d,0x4a,0x44,0xa2,0x1a,0x7f,0xac,0x6b, 0x75};
 unsigned char ct[16];
-u32 k[1024];
+u32 k[16];
 int p;
 
 static const u32 rcon[] = {
 	0x01000000, 0x02000000, 0x04000000, 0x08000000,
 	0x10000000, 0x20000000, 0x40000000, 0x80000000,
-	0x1B000000, 0x36000000,
+	0x1B000000, 0x36000000
 };
 
+//SBOX
 const unsigned char SBOX[] =   {
 	0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
 	0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
@@ -54,6 +55,7 @@ const unsigned char SBOX[] =   {
 	0xe1, 0xf8, 0x98, 0x11, 0x69, 0xd9, 0x8e, 0x94, 0x9b, 0x1e, 0x87, 0xe9, 0xce, 0x55, 0x28, 0xdf,
 	0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16 };
 
+//SBOX inverse
 const unsigned char SBOX_i[] = {	
 	0x52, 0x09, 0x6A, 0xD5, 0x30, 0x36, 0xA5, 0x38, 0xBF, 0x40, 0xA3, 0x9E, 0x81, 0xF3, 0xD7, 0xFB,
 	0x7C, 0xE3, 0x39, 0x82, 0x9B, 0x2F, 0xFF, 0x87, 0x34, 0x8E, 0x43, 0x44, 0xC4, 0xDE, 0xE9, 0xCB,
@@ -118,7 +120,7 @@ void break_aes(){
 				temp2 ^= SBOX_i[temp1];
 			}
 			if(temp2 == 0){
-				//printf("Key found for cell %d: %d\n", i, j);
+				//printf("Key found for cell %d: %02x\n", i, j);
 				key_poss[i][p] = j;
 				p++;
 			}
@@ -187,74 +189,72 @@ void print_hex_string(char* buf, int len)
         printf("%02x", *((unsigned char *)buf + i));
 }
 
-unsigned char SubWord(unsigned char *word){
-	word[0] = SBOX[word[0]];
-    word[1] = SBOX[word[1]];
-    word[2] = SBOX[word[2]];
-    word[3] = SBOX[word[3]];
-    return *word;
+//Subs the individual bytes contained in the word
+uint32_t SubWord(uint32_t word){
+	unsigned char bytes[4];
+	uint32_t n = word;
+	//printf("word %x ", word);
+	bytes[0] = (n >> 24) & 0xff;
+	bytes[1] = (n >> 16) & 0xff;
+	bytes[2] = (n >> 8) & 0xff;
+	bytes[3] = n & 0xff;
+
+	//printf("bytes: %x %x\n", bytes[3], SBOX[bytes[3]]);
+	
+	uint32_t ret = get_words(SBOX[bytes[0]], SBOX[bytes[1]],SBOX[bytes[2]],SBOX[bytes[3]]);
+
+    return ret;
 }
 
-unsigned char *RotWord(unsigned char *word){
-	unsigned char *temp = &word[0];
-    word[0] = word[1];
-    word[1] = word[2];
-    word[2] = word[3];
-    word[3] = *temp;
+//Shifts word to the left once
+uint32_t RotWord(uint32_t word){
+	word = (word << 8) | (word >> 12);
+	//printf("word %d\n", word);
     return word;
 }
 
-void reverse_schedule(unsigned char w[4*5]) {
-    for(int i = 4*(5) - 1; i >= 4; i--){
-        w[i-4] = w[i] ^ (i % 4 ? w[i-1] : SubWord(RotWord(&w[i-1])) ^ (rcon[i%4] << 24));
+//Reversing the key expansion algorithm
+void reverse_schedule(uint32_t w[4 * AES_ROUNDS]) {
+
+	uint32_t temp;
+    for(int i = 4*(AES_ROUNDS) - 1; i >= 4; --i){
+    	temp = w[i - 1];
+    	if (i % 4 == 0)
+       		temp = SubWord(RotWord(w[i-1])) ^ (rcon[i/4] << 24);
+		w[i-4] = w[i] ^ temp;
     }
-    for(int i = 0; i < 4; i++){
-    	PUTU32(k + i*4, w[i]);
-    }
+    for(int i = 0; i < 4; ++i) PUTU32(k + i*4, w[i]);
 }
 
-
+//Puts possible keys into a usable format and check if the key is valid
 void cycle_through_round_keys(){
-	int i = 0;
 	for(int i = 0; i < p; i++){
 		unsigned char rk[16] = {rnd_keys[i][0], rnd_keys[i][1], rnd_keys[i][2], rnd_keys[i][3], rnd_keys[i][4], 
 			rnd_keys[i][5], rnd_keys[i][6], rnd_keys[i][7], rnd_keys[i][8], rnd_keys[i][9], rnd_keys[i][10], 
 			rnd_keys[i][11], rnd_keys[i][12], rnd_keys[i][13], rnd_keys[i][14], rnd_keys[i][15]};
-			reverse_schedule(rk);
-			rijndaelEncrypt(k, 4, pt, ct);
-			//print_hex_string((char *)ct, 16);
-			printf("\n");
-			if(!strcmp((char*)ct, (char*)sln)){
-				printf("found key\n");
-			}
+		uint32_t w[4*AES_ROUNDS] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			get_words(rk[0], rk[4], rk[8], rk[12]),
+			get_words(rk[1], rk[5], rk[9], rk[13]),
+			get_words(rk[2], rk[6], rk[10], rk[14]),
+			get_words(rk[3], rk[7], rk[11], rk[15])};
+
+		reverse_schedule(w);
+		rijndaelEncrypt(k, 4, pt, ct);
+		print_hex_string((char *)ct, 16);
+		printf("\n");
+		if(!strcmp((char*)ct, (char*)sln)){
+			printf("found key\n");
+		}
 	}
 }
 
-u32 get_words(unsigned char r1, unsigned char r2, unsigned char r3, unsigned char r4){
+//Takes 4 bytes and converts them into a word
+uint32_t get_words(unsigned char r1, unsigned char r2, unsigned char r3, unsigned char r4){
 	u32 word;
 	//printf("bytes: %hhx %hhx %hhx %hhx ", r1, r2, r3, r4);
-	word = ((u32)(r1 << 24) | ((u32)r2 << 16) | ((u32)r3 << 8) | (u32)r4);
+	word = ((((u32)r1) << 24) | (((u32)r2) << 16) | (((u32)r3) << 8) | (((u32)r4)));
 	//printf("words: %02x\n", word);
 	return word;
-}
-
-
-void cycle_through_round_keys(int i){
-		unsigned char rk[20] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		get_words(rnd_keys[i][0], rnd_keys[i][1], rnd_keys[i][2], rnd_keys[i][3]), 
-		get_words(rnd_keys[i][4], rnd_keys[i][5], rnd_keys[i][6], rnd_keys[i][7]), 
-		get_words(rnd_keys[i][8], rnd_keys[i][9], rnd_keys[i][10], rnd_keys[i][11]), 
-		get_words(rnd_keys[i][12], rnd_keys[i][13], rnd_keys[i][14], rnd_keys[i][15])
-		};
-		reverse_schedule(rk);
-		rijndaelEncrypt(k, 4, pt, ct);
-		print_hex_string((char *)ct, 16); 
-		printf("\n");
-		if(!strcmp((char*)ct, (char*)k)){
-			printf("found key: ");
-			print_hex_string((char *)k, 16);
-			printf("\n");
-		}
 }
 
 int main(int argc, char const *argv[])
@@ -262,8 +262,7 @@ int main(int argc, char const *argv[])
 	read_text();
 	break_aes();
 	combine_keys();
-	for(int i = 0; i < p; i++)
-		cycle_through_round_keys(i);
+	cycle_through_round_keys();
 	
 	return 0;
 }
