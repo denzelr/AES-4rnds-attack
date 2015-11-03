@@ -27,9 +27,8 @@
 static unsigned char pt[16] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0};
 static unsigned char sln[16] = {0x71,0xfa,0xe4,0x86,0xfa,0xfc,0x99,0x0d,0x4a,0x44,0xa2,0x1a,0x7f,0xac,0x6b, 0x75};
 unsigned char ct[16];
-unsigned k[1024];
+u32 k[1024];
 int p;
-
 
 static const u32 rcon[] = {
 	0x01000000, 0x02000000, 0x04000000, 0x08000000,
@@ -37,7 +36,7 @@ static const u32 rcon[] = {
 	0x1B000000, 0x36000000,
 };
 
-const unsigned char SBOX[256] =   {
+const unsigned char SBOX[] =   {
 	0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
 	0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
 	0xb7, 0xfd, 0x93, 0x26, 0x36, 0x3f, 0xf7, 0xcc, 0x34, 0xa5, 0xe5, 0xf1, 0x71, 0xd8, 0x31, 0x15,
@@ -106,7 +105,6 @@ void break_aes(){
 
 	int i, j, k;
 	unsigned int temp1, temp2;
-	char store[256] = {0};
 
 	//All i, j, values
 	for(i = 0; i < 16; i++){
@@ -114,7 +112,7 @@ void break_aes(){
 		//Exhaust keys
 		for(j = 0; j < 256; j++){
 			temp2 = 0;
-			//For all ciphertexts
+			//For all ciphertexts, xor each cell for each state then check for difference
 			for(k = 0; k < 256; k++){
 				temp1 = state[k][i] ^ j;
 				temp2 ^= SBOX_i[temp1];
@@ -130,6 +128,8 @@ void break_aes(){
 }
 
 void combine_keys(){
+
+	//Combine all key possibilites from rnd_keys
 	int i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, ia, ib, ic, id, ie, iff;
 	for(i0 = 0; key_poss[0][i0] != 0; i0++){
 	for(i1 = 0; key_poss[1][i1] != 0; i1++){
@@ -187,7 +187,7 @@ void print_hex_string(char* buf, int len)
         printf("%02x", *((unsigned char *)buf + i));
 }
 
-u32 SubWord(unsigned char *word){
+unsigned char SubWord(unsigned char *word){
 	word[0] = SBOX[word[0]];
     word[1] = SBOX[word[1]];
     word[2] = SBOX[word[2]];
@@ -205,12 +205,14 @@ unsigned char *RotWord(unsigned char *word){
 }
 
 void reverse_schedule(unsigned char w[4*5]) {
-    for(int i = 4*(5) - 1; i >= 4; i--)
-        w[i-4] = w[i] ^ (i % 4 ? w[i-1] : SubWord(RotWord(&w[i-1])) ^ (rcon[i/4] << 24));
+    for(int i = 4*(5) - 1; i >= 4; i--){
+        w[i-4] = w[i] ^ (i % 4 ? w[i-1] : SubWord(RotWord(&w[i-1])) ^ (rcon[i%4] << 24));
+    }
     for(int i = 0; i < 4; i++){
     	PUTU32(k + i*4, w[i]);
     }
 }
+
 
 void cycle_through_round_keys(){
 	int i = 0;
@@ -227,16 +229,40 @@ void cycle_through_round_keys(){
 			}
 	}
 
-	
+u32 get_words(unsigned char r1, unsigned char r2, unsigned char r3, unsigned char r4){
+	u32 word;
+	//printf("bytes: %hhx %hhx %hhx %hhx ", r1, r2, r3, r4);
+	word = ((u32)(r1 << 24) | ((u32)r2 << 16) | ((u32)r3 << 8) | (u32)r4);
+	//printf("words: %02x\n", word);
+	return word;
+}
+
+
+void cycle_through_round_keys(int i){
+		unsigned char rk[4] = {
+		get_words(rnd_keys[i][0], rnd_keys[i][1], rnd_keys[i][2], rnd_keys[i][3]), 
+		get_words(rnd_keys[i][4], rnd_keys[i][5], rnd_keys[i][6], rnd_keys[i][7]), 
+		get_words(rnd_keys[i][8], rnd_keys[i][9], rnd_keys[i][10], rnd_keys[i][11]), 
+		get_words(rnd_keys[i][12], rnd_keys[i][13], rnd_keys[i][14], rnd_keys[i][15])
+		};
+		reverse_schedule(rk);
+		rijndaelEncrypt(k, 4, pt, ct);
+		print_hex_string((char *)ct, 16); 
+		printf("\n");
+		if(!strcmp((char*)ct, (char*)k)){
+			printf("found key: ");
+			print_hex_string((char *)k, 16);
+			printf("\n");
+		}
 }
 
 int main(int argc, char const *argv[])
 {
 	read_text();
-
 	break_aes();
 	combine_keys();
-	cycle_through_round_keys();
+	for(int i = 0; i < p; i++)
+		cycle_through_round_keys(i);
 	
 	return 0;
 }
