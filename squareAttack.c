@@ -213,6 +213,22 @@ void reverse_schedule(unsigned char w[4*5]) {
     }
 }
 
+
+void cycle_through_round_keys(){
+	int i = 0;
+	for(int i = 0; i < p; i++){
+		unsigned char rk[16] = {rnd_keys[i][0], rnd_keys[i][1], rnd_keys[i][2], rnd_keys[i][3], rnd_keys[i][4], 
+			rnd_keys[i][5], rnd_keys[i][6], rnd_keys[i][7], rnd_keys[i][8], rnd_keys[i][9], rnd_keys[i][10], 
+			rnd_keys[i][11], rnd_keys[i][12], rnd_keys[i][13], rnd_keys[i][14], rnd_keys[i][15]};
+			reverse_schedule(rk);
+			rijndaelEncrypt(k, 4, pt, ct);
+			//print_hex_string((char *)ct, 16);
+			printf("\n");
+			if(!strcmp((char*)ct, (char*)sln)){
+				printf("found key\n");
+			}
+	}
+
 u32 get_words(unsigned char r1, unsigned char r2, unsigned char r3, unsigned char r4){
 	u32 word;
 	//printf("bytes: %hhx %hhx %hhx %hhx ", r1, r2, r3, r4);
@@ -220,6 +236,7 @@ u32 get_words(unsigned char r1, unsigned char r2, unsigned char r3, unsigned cha
 	//printf("words: %02x\n", word);
 	return word;
 }
+
 
 void cycle_through_round_keys(int i){
 		unsigned char rk[20] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
