@@ -228,6 +228,7 @@ void cycle_through_round_keys(){
 				printf("found key\n");
 			}
 	}
+}
 
 u32 get_words(unsigned char r1, unsigned char r2, unsigned char r3, unsigned char r4){
 	u32 word;
