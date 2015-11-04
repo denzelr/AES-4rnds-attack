@@ -27,7 +27,8 @@ uint32_t get_words(unsigned char r1, unsigned char r2, unsigned char r3, unsigne
 static unsigned char pt[16] = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x00};
 static unsigned char sln[16] = {0x71,0xfa,0xe4,0x86,0xfa,0xfc,0x99,0x0d,0x4a,0x44,0xa2,0x1a,0x7f,0xac,0x6b, 0x75};
 unsigned char ct[16];
-u32 k[16];
+unsigned char k[16];
+unsigned rek[1024];
 int p;
 
 static const u32 rcon[] = {
@@ -223,7 +224,7 @@ void reverse_schedule(uint32_t w[4 * AES_ROUNDS]) {
        		temp = SubWord(RotWord(w[i-1])) ^ (rcon[i/4] << 24);
 		w[i-4] = w[i] ^ temp;
     }
-    for(int i = 0; i < 4; ++i) PUTU32(k + i*4, w[i]);
+    for(int i = 0; i < 16; ++i) k[i] = w[i];
 }
 
 //Puts possible keys into a usable format and check if the key is valid
@@ -239,11 +240,14 @@ void cycle_through_round_keys(){
 			get_words(rk[3], rk[7], rk[11], rk[15])};
 
 		reverse_schedule(w);
-		rijndaelEncrypt(k, 4, pt, ct);
-		print_hex_string((char *)ct, 16);
-		printf("\n");
+		rijndaelKeySetupEnc(rek, (unsigned char *)k, 128);
+		rijndaelEncrypt(rek, 4, pt, ct);
+		//print_hex_string((char *)rek, 128);
+		//printf("\n");
 		if(!strcmp((char*)ct, (char*)sln)){
-			printf("found key\n");
+			printf("found key: ");
+			print_hex_string((char *) k, 16);
+			printf("\n");
 		}
 	}
 }
